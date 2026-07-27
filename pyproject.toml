@@ -1,0 +1,9 @@
+[project]
+name = "logistics-disruption-monitoring-agent"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.140.0",
+    "streamlit==1.60.0",
+    "uvicorn",
+]
