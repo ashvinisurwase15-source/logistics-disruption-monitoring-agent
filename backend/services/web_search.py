@@ -1,32 +1,55 @@
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+from exa_py import Exa
+
 from backend.models.news import News
 
+# Load .env file
+BASE_DIR = Path(__file__).resolve().parents[2]
+ENV_PATH = BASE_DIR / ".env"
 
-def search_news(query: str):
+print("ENV PATH:", ENV_PATH)
+print("ENV EXISTS:", ENV_PATH.exists())
+
+load_dotenv(ENV_PATH)
+
+api_key = os.getenv("EXA_API_KEY")
+print("EXA_API_KEY:", api_key)
+
+if not api_key:
+    raise ValueError(
+        "EXA_API_KEY not found. Please add it to your .env file."
+    )
+
+# Create Exa client
+exa = Exa(api_key=api_key)
+
+
+def search_news(query: str = "EV battery supply chain disruptions"):
     """
-    Temporary dummy news search.
-    This will be replaced with a real web search API later.
+    Search the web using Exa.
     """
 
-    return [
-        News(
-            title="Port Strike Delays EV Battery Shipments",
-            source="Reuters",
-            url="https://example.com/news1",
-            published_date="2026-07-28",
-            summary="Port workers strike causes delays in lithium battery transportation."
-        ),
-        News(
-            title="Lithium Prices Increase Worldwide",
-            source="Bloomberg",
-            url="https://example.com/news2",
-            published_date="2026-07-27",
-            summary="Global lithium demand continues to rise due to EV production."
-        ),
-        News(
-            title="New Battery Factory Opens in India",
-            source="Economic Times",
-            url="https://example.com/news3",
-            published_date="2026-07-26",
-            summary="India expands domestic EV battery manufacturing capacity."
-        ),
-    ]
+    response = exa.search_and_contents(
+        query=query,
+        type="auto",
+        num_results=5,
+        text=True,
+    )
+
+    news_list = []
+
+    for result in response.results:
+        news_list.append(
+            News(
+                title=result.title if result.title else "No Title",
+                source="Exa Search",
+                url=result.url,
+                published_date=None,
+                summary=result.text[:300] if result.text else "No summary available."
+            )
+        )
+
+    return news_list
