@@ -1,63 +1,65 @@
 from backend.agents.news_agent import NewsAgent
 from backend.models.supplier import SupplierImpact
+from backend.services.entity_extractor import extract_entities
 
 
 class SupplierAgent:
+
     def __init__(self):
         self.news_agent = NewsAgent()
 
     def analyze_supplier_impact(self):
+
         news = self.news_agent.get_latest_news()
 
         impacts = []
 
         for article in news:
-            title = article.title.lower()
 
-            supplier = "Unknown"
-            material = "Unknown"
-            region = "Global"
+            # Extract supplier, material and region
+            supplier, material, region = extract_entities(
+                article.title + " " + article.summary
+            )
+
+            # Debug prints (remove later if you want)
+            print("TITLE:", article.title)
+            print("SUMMARY:", article.summary)
+            print("EXTRACTED:", supplier, material, region)
+            print("=" * 60)
+
+            title = article.title.lower()
+            summary = article.summary.lower()
+
+            text = title + " " + summary
+
+            # Default values
             impact_level = "Low"
             reason = "No major disruption detected."
 
-            # Supplier Detection
-            if "catl" in title:
-                supplier = "CATL"
-            elif "tesla" in title:
-                supplier = "Tesla"
-            elif "byd" in title:
-                supplier = "BYD"
-            elif "lg" in title:
-                supplier = "LG Energy Solution"
-            elif "panasonic" in title:
-                supplier = "Panasonic"
-
-            # Material Detection
-            if "lithium" in title:
-                material = "Lithium"
-            elif "nickel" in title:
-                material = "Nickel"
-            elif "cobalt" in title:
-                material = "Cobalt"
-            elif "graphite" in title:
-                material = "Graphite"
-
-            # Region Detection
-            if "china" in title:
-                region = "China"
-            elif "india" in title:
-                region = "India"
-            elif "australia" in title:
-                region = "Australia"
-            elif "chile" in title:
-                region = "Chile"
-
-            # Impact Detection
-            if any(word in title for word in ["strike", "shutdown", "ban", "war", "earthquake"]):
+            # High Impact
+            if any(word in text for word in [
+                "strike",
+                "shutdown",
+                "earthquake",
+                "war",
+                "sanction",
+                "export ban",
+                "fire",
+                "explosion",
+                "factory closure"
+            ]):
                 impact_level = "High"
                 reason = "Major disruption may impact supplier operations."
 
-            elif any(word in title for word in ["delay", "shortage", "slowdown"]):
+            # Medium Impact
+            elif any(word in text for word in [
+                "delay",
+                "shortage",
+                "slowdown",
+                "congestion",
+                "bottleneck",
+                "capacity"
+            ]):
                 impact_level = "Medium"
                 reason = "Possible supply chain delays."
 
