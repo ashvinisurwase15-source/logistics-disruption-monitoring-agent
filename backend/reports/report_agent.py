@@ -3,7 +3,7 @@ from datetime import datetime
 from backend.agents.news_agent import NewsAgent
 from backend.agents.risk_agent import RiskAgent
 from backend.agents.supplier_agent import SupplierAgent
-
+from backend.reports.pdf_generator import generate_pdf
 from backend.models.report import Report
 
 
@@ -41,10 +41,14 @@ class ReportAgent:
                 "No major disruptions detected in the EV battery supply chain."
             )
 
-        return Report(
+        report = Report(
             generated_at=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             total_news=len(news),
             high_risk_events=high_risk_events,
             suppliers_impacted=impacted_suppliers,
-            summary=summary,
+            summary=summary
         )
+
+        generate_pdf(report)
+
+        return report
