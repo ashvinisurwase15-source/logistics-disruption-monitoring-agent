@@ -1,10 +1,9 @@
 from fastapi import FastAPI
 from backend.api.news_routes import router as news_router
 from backend.api.risk_routes import router as risk_router
-from backend.api.graph_routes import router as graph_router
 from backend.api.supplier_routes import router as supplier_router
 from backend.api.report_routes import router as report_router
-
+from backend.api.graph_routes import router as graph_router
 app = FastAPI(
     title="EV Battery Supply Chain Monitor",
     description="Autonomous disruption monitoring system for the EV battery supply chain",

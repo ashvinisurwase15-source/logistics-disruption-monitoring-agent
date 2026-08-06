@@ -8,8 +8,8 @@ graph_agent = GraphAgent()
 
 
 @router.get("/graph", tags=["Knowledge Graph"])
-def get_graph():
+def generate_graph():
     """
-    Returns the Supply Chain Knowledge Graph.
+    Generate and save the Supply Chain Knowledge Graph.
     """
-    return graph_agent.build_graph()
+    return graph_agent.generate_graph()

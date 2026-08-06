@@ -5,6 +5,7 @@ requires-python = ">=3.14"
 dependencies = [
     "exa-py>=2.16.2",
     "fastapi>=0.140.0",
+    "network>=0.1",
     "python-dotenv>=1.2.2",
     "reportlab>=5.0.0",
     "streamlit==1.60.0",
