@@ -7,5 +7,11 @@ class NewsAgent:
     Responsible for collecting disruption-related news.
     """
 
-    def get_latest_news(self, query: str = "EV Battery Supply Chain"):
+    def get_latest_news(
+            self,
+            query: str = (
+                    "EV battery supply chain disruption "
+                    "port strike shortage shutdown shipment delay"
+            )
+    ):
         return search_news(query)
