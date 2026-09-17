@@ -1,3 +1,4 @@
+from backend.api.sourcing_routes import router as sourcing_router
 from fastapi import FastAPI
 from backend.api.recommendation_routes import router as recommendation_router
 from backend.api.news_routes import router as news_router
@@ -17,6 +18,7 @@ app.include_router(graph_router)
 app.include_router(supplier_router)
 app.include_router(recommendation_router)
 app.include_router(orchestrator_router)
+app.include_router(sourcing_router)
 app.include_router(report_router, tags=["Report"])
 
 
