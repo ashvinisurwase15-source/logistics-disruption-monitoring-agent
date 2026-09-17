@@ -14,42 +14,25 @@ st.set_page_config(
 
 
 # ============================================================
-# TITLE
-# ============================================================
-
-st.title("🔋 EV Battery Supply Chain Monitor")
-
-st.subheader("Autonomous Disruption Monitoring Agent")
-
-st.write(
-    "AI-powered system for monitoring disruptions in the EV battery "
-    "supply chain and supporting supply chain risk management."
-)
-
-st.divider()
-
-
-# ============================================================
-# BACKEND CONFIGURATION
+# FASTAPI CONFIGURATION
 # ============================================================
 
 API_URL = "http://127.0.0.1:8000"
 
 
 # ============================================================
-# GENERIC API GET FUNCTION
+# API HELPER
 # ============================================================
 
-def api_get(endpoint, timeout=10):
+def get_api_data(endpoint):
     """
-    Send a GET request to the FastAPI backend.
+    Send GET request to FastAPI backend.
     """
 
     try:
-
         response = requests.get(
             f"{API_URL}{endpoint}",
-            timeout=timeout
+            timeout=15
         )
 
         if response.status_code == 200:
@@ -58,228 +41,171 @@ def api_get(endpoint, timeout=10):
         return None
 
     except requests.exceptions.RequestException:
-
         return None
 
 
 # ============================================================
-# LOAD NEWS
+# LOAD DATA FROM FASTAPI
 # ============================================================
 
-def get_news():
-    """
-    Get news events from FastAPI.
-    """
-
-    data = api_get(
-        "/news",
-        timeout=15
-    )
-
-    if isinstance(data, list):
-        return data
-
-    return []
+news_data = get_api_data("/news")
+risk_data = get_api_data("/risk")
+supplier_data = get_api_data("/supplier")
+recommendation_data = get_api_data("/recommendation")
+orchestrator_data = get_api_data("/orchestrator")
+health_data = get_api_data("/health")
 
 
 # ============================================================
-# LOAD RISK DATA
+# SAFETY CHECKS
 # ============================================================
 
-def get_risk_data():
-    """
-    Get risk analysis results from FastAPI.
-    """
+if not isinstance(news_data, list):
+    news_data = []
 
-    data = api_get(
-        "/risk",
-        timeout=15
-    )
+if not isinstance(risk_data, list):
+    risk_data = []
 
-    if isinstance(data, list):
-        return data
-
-    return []
+if not isinstance(supplier_data, list):
+    supplier_data = []
 
 
 # ============================================================
-# LOAD RECOMMENDATION
+# TITLE
 # ============================================================
 
-def get_recommendation():
-    """
-    Get recommendation from FastAPI.
+st.title("🔋 EV Battery Supply Chain Monitor")
 
-    Recommendation may take longer because it runs
-    through the risk and recommendation agents.
-    """
+st.subheader(
+    "Autonomous Disruption Monitoring Agent"
+)
 
-    data = api_get(
-        "/recommendation",
-        timeout=30
-    )
+st.write(
+    "AI-powered multi-agent system for monitoring "
+    "disruptions across the EV battery supply chain."
+)
 
-    if isinstance(data, dict):
-        return data
-
-    return None
+st.divider()
 
 
 # ============================================================
-# CHECK FASTAPI BACKEND
-# ============================================================
-
-def check_backend():
-    """
-    Check whether FastAPI backend is running.
-    """
-
-    try:
-
-        response = requests.get(
-            f"{API_URL}/docs",
-            timeout=5
-        )
-
-        return response.status_code == 200
-
-    except requests.exceptions.RequestException:
-
-        return False
-
-
-# ============================================================
-# CHECK ORCHESTRATOR
-# ============================================================
-
-def check_orchestrator():
-    """
-    Check whether the orchestrator endpoint is working.
-    """
-
-    data = api_get(
-        "/orchestrator",
-        timeout=15
-    )
-
-    return data
-
-
-# ============================================================
-# LOAD DATA
-# ============================================================
-
-news = get_news()
-
-risks = get_risk_data()
-
-recommendation = get_recommendation()
-
-orchestrator_data = check_orchestrator()
-
-
-# ============================================================
-# VALIDATE DATA
-# ============================================================
-
-if not isinstance(news, list):
-
-    news = []
-
-
-if not isinstance(risks, list):
-
-    risks = []
-
-
-# ============================================================
-# SUPPLY CHAIN DASHBOARD
+# DASHBOARD
 # ============================================================
 
 st.header("📊 Supply Chain Dashboard")
 
 
-# ============================================================
-# CALCULATE METRICS
-# ============================================================
+# ------------------------------------------------------------
+# Metrics
+# ------------------------------------------------------------
 
-active_disruptions = len(risks)
+news_count = len(news_data)
 
+active_disruptions = len(risk_data)
 
-high_risk_count = sum(
+high_risk_events = sum(
     1
-    for risk in risks
-    if str(
-        risk.get("severity", "")
-    ).lower() == "high"
+    for risk in risk_data
+    if str(risk.get("severity", "")).lower() == "high"
 )
 
+affected_suppliers = len(supplier_data)
 
-# ============================================================
-# AFFECTED SUPPLIERS
-# ============================================================
-
-supplier_names = set()
-
-
-for risk in risks:
-
-    supplier = risk.get("supplier")
-
-    if supplier:
-
-        supplier_names.add(
-            str(supplier)
-        )
-
-
-if supplier_names:
-
-    affected_suppliers = len(
-        supplier_names
-    )
-
-else:
-
-    affected_suppliers = len(risks)
-
-
-# ============================================================
-# DISPLAY DASHBOARD METRICS
-# ============================================================
 
 col1, col2, col3, col4 = st.columns(4)
 
 
 with col1:
-
     st.metric(
-        label="📰 News Events",
-        value=len(news)
+        "📰 News Events",
+        news_count
     )
 
 
 with col2:
-
     st.metric(
-        label="⚠️ Active Disruptions",
-        value=active_disruptions
+        "⚠️ Active Disruptions",
+        active_disruptions
     )
 
 
 with col3:
-
     st.metric(
-        label="🔴 High Risk Events",
-        value=high_risk_count
+        "🔴 High Risk Events",
+        high_risk_events
     )
 
 
 with col4:
-
     st.metric(
-        label="🏭 Affected Suppliers",
-        value=affected_suppliers
+        "🏭 Affected Suppliers",
+        affected_suppliers
+    )
+
+
+st.divider()
+
+
+# ============================================================
+# NEWS EVENTS
+# ============================================================
+
+st.header("📰 Latest News Events")
+
+
+if news_data:
+
+    for article in news_data:
+
+        title = article.get(
+            "title",
+            "Unknown News Event"
+        )
+
+        source = article.get(
+            "source",
+            "Unknown Source"
+        )
+
+        summary = article.get(
+            "summary",
+            "No summary available."
+        )
+
+        url = article.get(
+            "url",
+            ""
+        )
+
+        published_date = article.get(
+            "published_date",
+            None
+        )
+
+        with st.expander(title):
+
+            st.write(
+                f"**Source:** {source}"
+            )
+
+            if published_date:
+                st.write(
+                    f"**Published:** {published_date}"
+                )
+
+            st.write(
+                f"**Summary:** {summary}"
+            )
+
+            if url:
+                st.markdown(
+                    f"[🔗 Read Source]({url})"
+                )
+
+else:
+
+    st.info(
+        "No news events available."
     )
 
 
@@ -293,112 +219,74 @@ st.divider()
 st.header("⚠️ Risk Events")
 
 
-if risks:
+if risk_data:
 
-    for risk in risks:
-
-        severity = risk.get(
-            "severity",
-            "Unknown"
-        )
+    for risk in risk_data:
 
         title = risk.get(
             "title",
             "Unknown Risk"
         )
 
-        # ----------------------------------------------------
-        # Severity icon
-        # ----------------------------------------------------
+        severity = risk.get(
+            "severity",
+            "Unknown"
+        )
 
-        severity_lower = str(
-            severity
-        ).lower()
+        category = risk.get(
+            "category",
+            "Unknown"
+        )
 
+        region = risk.get(
+            "region",
+            "Unknown"
+        )
 
-        if severity_lower == "high":
+        confidence = risk.get(
+            "confidence",
+            0
+        )
 
-            icon = "🔴"
-
-        elif severity_lower == "medium":
-
-            icon = "🟠"
-
-        elif severity_lower == "low":
-
-            icon = "🟢"
-
-        else:
-
-            icon = "⚪"
-
-
-        # ----------------------------------------------------
-        # Risk Expander
-        # ----------------------------------------------------
+        reason = risk.get(
+            "reason",
+            "No reason available."
+        )
 
         with st.expander(
-            f"{icon} {severity} — {title}"
+            f"{severity} - {title}"
         ):
 
-            st.write(
-                f"**Category:** "
-                f"{risk.get('category', 'Unknown')}"
-            )
+            col1, col2 = st.columns(2)
 
-            st.write(
-                f"**Region:** "
-                f"{risk.get('region', 'Unknown')}"
-            )
-
-            st.write(
-                f"**Confidence:** "
-                f"{risk.get('confidence', 0)}"
-            )
-
-            st.write(
-                f"**Reason:** "
-                f"{risk.get('reason', 'Not available')}"
-            )
-
-
-            # ------------------------------------------------
-            # Optional supplier information
-            # ------------------------------------------------
-
-            if risk.get("supplier"):
+            with col1:
 
                 st.write(
-                    f"**Supplier:** "
-                    f"{risk.get('supplier')}"
+                    f"**Category:** {category}"
                 )
-
-
-            # ------------------------------------------------
-            # Optional source information
-            # ------------------------------------------------
-
-            if risk.get("source"):
 
                 st.write(
-                    f"**Source:** "
-                    f"{risk.get('source')}"
+                    f"**Region:** {region}"
                 )
 
-
-            if risk.get("url"):
+            with col2:
 
                 st.write(
-                    f"**Source URL:** "
-                    f"{risk.get('url')}"
+                    f"**Severity:** {severity}"
                 )
 
+                st.write(
+                    f"**Confidence:** {confidence}"
+                )
+
+            st.write(
+                f"**Reason:** {reason}"
+            )
 
 else:
 
     st.info(
-        "No risk events available. "
-        "Make sure the FastAPI backend is running."
+        "No risk events detected."
     )
 
 
@@ -406,114 +294,312 @@ st.divider()
 
 
 # ============================================================
-# RECOMMENDED ACTION
+# SUPPLIER IMPACT
 # ============================================================
 
-st.header("🤖 Recommended Action")
+st.header("🏭 Supplier Impact")
 
 
-if recommendation:
+if supplier_data:
 
-    # --------------------------------------------------------
-    # Extract recommendation
-    # --------------------------------------------------------
+    for supplier in supplier_data:
 
-    recommendation_data = recommendation.get(
-        "recommendation",
-        {}
-    )
-
-
-    # --------------------------------------------------------
-    # Validate recommendation
-    # --------------------------------------------------------
-
-    if not isinstance(
-        recommendation_data,
-        dict
-    ):
-
-        recommendation_data = {}
-
-
-    # --------------------------------------------------------
-    # Recommended action
-    # --------------------------------------------------------
-
-    recommended_action = recommendation_data.get(
-        "recommended_action",
-        "No recommendation available."
-    )
-
-
-    st.success(
-        recommended_action
-    )
-
-
-    # --------------------------------------------------------
-    # Recommendation details
-    # --------------------------------------------------------
-
-    recommendation_col1, recommendation_col2 = st.columns(2)
-
-
-    with recommendation_col1:
-
-        st.write(
-            f"**Disruption Type:** "
-            f"{recommendation_data.get('disruption_type', 'Unknown')}"
+        supplier_name = supplier.get(
+            "supplier",
+            "Unknown"
         )
 
-
-    with recommendation_col2:
-
-        st.write(
-            f"**Risk Level:** "
-            f"{recommendation_data.get('risk_level', 'Unknown')}"
+        material = supplier.get(
+            "material",
+            "Unknown"
         )
 
-
-    # --------------------------------------------------------
-    # Related risk
-    # --------------------------------------------------------
-
-    related_risk = recommendation.get(
-        "risk",
-        {}
-    )
-
-
-    if isinstance(
-        related_risk,
-        dict
-    ) and related_risk:
-
-        st.write("### Related Risk")
-
-
-        st.write(
-            f"**Risk Event:** "
-            f"{related_risk.get('title', 'Unknown')}"
+        region = supplier.get(
+            "region",
+            "Unknown"
         )
 
-
-        st.write(
-            f"**Severity:** "
-            f"{related_risk.get('severity', 'Unknown')}"
+        impact_level = supplier.get(
+            "impact_level",
+            "Unknown"
         )
 
-
-        st.write(
-            f"**Confidence:** "
-            f"{related_risk.get('confidence', 0)}"
+        reason = supplier.get(
+            "reason",
+            "No reason available."
         )
 
+        with st.expander(
+            f"{impact_level} Impact - {supplier_name}"
+        ):
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.write(
+                    f"**Supplier:** {supplier_name}"
+                )
+
+                st.write(
+                    f"**Material:** {material}"
+                )
+
+            with col2:
+
+                st.write(
+                    f"**Region:** {region}"
+                )
+
+                st.write(
+                    f"**Impact Level:** {impact_level}"
+                )
+
+            st.write(
+                f"**Reason:** {reason}"
+            )
 
 else:
 
-    st.warning(
-        "Recommendation service is currently unavailable."
+    st.info(
+        "No supplier impact data available."
+    )
+
+
+st.divider()
+
+
+# ============================================================
+# AI MITIGATION RECOMMENDATIONS
+# ============================================================
+
+st.header("🤖 AI Mitigation Recommendations")
+
+
+if recommendation_data:
+
+    # Handle nested recommendation response
+    if isinstance(recommendation_data, dict):
+
+        recommendation = recommendation_data.get(
+            "recommendation"
+        )
+
+        related_risk = recommendation_data.get(
+            "risk"
+        )
+
+        if recommendation:
+
+            recommended_action = recommendation.get(
+                "recommended_action",
+                "No recommendation available."
+            )
+
+            disruption_type = recommendation.get(
+                "disruption_type",
+                "Unknown"
+            )
+
+            risk_level = recommendation.get(
+                "risk_level",
+                "Unknown"
+            )
+
+            st.success(
+                recommended_action
+            )
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                st.write(
+                    f"**Disruption Type:** "
+                    f"{disruption_type}"
+                )
+
+            with col2:
+
+                st.write(
+                    f"**Risk Level:** "
+                    f"{risk_level}"
+                )
+
+            if related_risk:
+
+                st.subheader(
+                    "Related Risk"
+                )
+
+                st.write(
+                    f"**Risk Event:** "
+                    f"{related_risk.get('title', 'Unknown')}"
+                )
+
+                st.write(
+                    f"**Severity:** "
+                    f"{related_risk.get('severity', 'Unknown')}"
+                )
+
+                st.write(
+                    f"**Confidence:** "
+                    f"{related_risk.get('confidence', 0)}"
+                )
+
+        else:
+
+            st.info(
+                "No mitigation recommendations available."
+            )
+
+    else:
+
+        st.info(
+            "No mitigation recommendations available."
+        )
+
+else:
+
+    st.info(
+        "No mitigation recommendations available."
+    )
+
+
+st.divider()
+
+
+# ============================================================
+# MULTI-AGENT ORCHESTRATOR
+# ============================================================
+
+st.header("🔄 Multi-Agent Orchestrator")
+
+
+if orchestrator_data:
+
+    if isinstance(orchestrator_data, dict):
+
+        # ----------------------------------------------------
+        # Orchestrator Metrics
+        # ----------------------------------------------------
+
+        orch_news_count = orchestrator_data.get(
+            "news_count",
+            0
+        )
+
+        orch_risk_count = orchestrator_data.get(
+            "risk_count",
+            0
+        )
+
+        orch_supplier_count = orchestrator_data.get(
+            "supplier_count",
+            0
+        )
+
+        orch_recommendation_count = orchestrator_data.get(
+            "recommendation_count",
+            0
+        )
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
+
+            st.metric(
+                "News",
+                orch_news_count
+            )
+
+        with col2:
+
+            st.metric(
+                "Risks",
+                orch_risk_count
+            )
+
+        with col3:
+
+            st.metric(
+                "Suppliers",
+                orch_supplier_count
+            )
+
+        with col4:
+
+            st.metric(
+                "Recommendations",
+                orch_recommendation_count
+            )
+
+        st.success(
+            "Multi-Agent Orchestrator is running successfully."
+        )
+
+        # ----------------------------------------------------
+        # Orchestrator Risks
+        # ----------------------------------------------------
+
+        orchestrator_risks = orchestrator_data.get(
+            "risks",
+            []
+        )
+
+        if orchestrator_risks:
+
+            st.subheader(
+                "Detected Risks"
+            )
+
+            for risk in orchestrator_risks:
+
+                if isinstance(risk, dict):
+
+                    st.write(
+                        f"**{risk.get('severity', 'Unknown')}** - "
+                        f"{risk.get('title', 'Unknown Risk')}"
+                    )
+
+        # ----------------------------------------------------
+        # Orchestrator Recommendations
+        # ----------------------------------------------------
+
+        orchestrator_recommendations = (
+            orchestrator_data.get(
+                "recommendations",
+                []
+            )
+        )
+
+        if orchestrator_recommendations:
+
+            st.subheader(
+                "Generated Recommendations"
+            )
+
+            for rec in orchestrator_recommendations:
+
+                if isinstance(rec, dict):
+
+                    st.write(
+                        rec.get(
+                            "recommended_action",
+                            "No action available."
+                        )
+                    )
+
+    else:
+
+        st.warning(
+            "Unexpected orchestrator response."
+        )
+
+else:
+
+    st.error(
+        "Orchestrator is currently unavailable."
     )
 
 
@@ -527,19 +613,12 @@ st.divider()
 st.header("🟢 System Status")
 
 
-# ============================================================
-# BACKEND STATUS
-# ============================================================
-
-backend_status = check_backend()
+col1, col2 = st.columns(2)
 
 
-status_col1, status_col2 = st.columns(2)
+with col1:
 
-
-with status_col1:
-
-    if backend_status:
+    if health_data:
 
         st.success(
             "FastAPI Backend: Connected"
@@ -552,16 +631,12 @@ with status_col1:
         )
 
 
-# ============================================================
-# ORCHESTRATOR STATUS
-# ============================================================
-
-with status_col2:
+with col2:
 
     if orchestrator_data:
 
         st.success(
-            "Orchestrator: Data Received"
+            "Orchestrator: Online"
         )
 
     else:
