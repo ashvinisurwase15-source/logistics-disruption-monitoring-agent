@@ -657,3 +657,43 @@ st.caption(
     "EV Battery Supply Chain Monitor | "
     "AI-powered Autonomous Disruption Monitoring System"
 )
+st.divider()
+
+# --------------------------------------------------
+# Supply Chain Knowledge Graph
+# --------------------------------------------------
+
+st.header("🔗 Supply Chain Knowledge Graph")
+
+try:
+    graph_response = requests.get(
+        f"{API_URL}/graph",
+        timeout=10
+    )
+
+    if graph_response.status_code == 200:
+
+        graph_data = graph_response.json()
+        graph_path = graph_data.get("graph_path")
+
+        if graph_path:
+
+            import os
+
+            if os.path.exists(graph_path):
+                st.image(
+                    graph_path,
+                    caption="EV Battery Supply Chain Knowledge Graph",
+                    use_container_width=True
+                )
+            else:
+                st.warning("Knowledge graph image was not found.")
+
+        else:
+            st.warning("Graph path was not returned by the API.")
+
+    else:
+        st.error("Knowledge Graph API returned an error.")
+
+except requests.exceptions.RequestException:
+    st.warning("Knowledge Graph service is currently unavailable.")
