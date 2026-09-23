@@ -2,10 +2,6 @@ import streamlit as st
 import requests
 
 
-# --------------------------------------------------
-# PAGE CONFIGURATION
-# --------------------------------------------------
-
 st.set_page_config(
     page_title="EV Battery Supply Chain Monitor",
     page_icon="🔋",
@@ -13,87 +9,14 @@ st.set_page_config(
 )
 
 
-# --------------------------------------------------
-# BACKEND CONFIGURATION
-# --------------------------------------------------
-
 API_URL = "http://127.0.0.1:8000"
 
 
-# --------------------------------------------------
-# API FUNCTIONS
-# --------------------------------------------------
-
-def get_news():
+def get_api_data(endpoint):
     try:
         response = requests.get(
-            f"{API_URL}/news",
-            timeout=10
-        )
-
-        if response.status_code == 200:
-            return response.json()
-
-        return []
-
-    except requests.exceptions.RequestException:
-        return []
-
-
-def get_risks():
-    try:
-        response = requests.get(
-            f"{API_URL}/risk",
-            timeout=10
-        )
-
-        if response.status_code == 200:
-            return response.json()
-
-        return []
-
-    except requests.exceptions.RequestException:
-        return []
-
-
-def get_suppliers():
-    try:
-        response = requests.get(
-            f"{API_URL}/supplier",
-            timeout=10
-        )
-
-        if response.status_code == 200:
-            return response.json()
-
-        return []
-
-    except requests.exceptions.RequestException:
-        return []
-
-
-def get_recommendation():
-    try:
-        response = requests.get(
-            f"{API_URL}/recommendation",
-            timeout=10
-        )
-
-        if response.status_code == 200:
-            return response.json()
-
-        return None
-
-    except requests.exceptions.RequestException:
-        return None
-
-
-def get_sourcing(material="Lithium"):
-    try:
-        response = requests.get(
-            f"{API_URL}/sourcing",
-            params={"material": material},
-            timeout=10
+            f"{API_URL}{endpoint}",
+            timeout=30
         )
 
         if response.status_code == 200:
@@ -106,14 +29,37 @@ def get_sourcing(material="Lithium"):
 
 
 # --------------------------------------------------
-# LOAD DATA
+# API DATA
 # --------------------------------------------------
 
-news = get_news()
-risks = get_risks()
-suppliers = get_suppliers()
-recommendation = get_recommendation()
-sourcing = get_sourcing("Lithium")
+news_data = get_api_data("/news")
+risk_data = get_api_data("/risk")
+supplier_data = get_api_data("/supplier")
+recommendation_data = get_api_data("/recommendation")
+sourcing_data = get_api_data("/sourcing?material=Lithium")
+orchestrator_data = get_api_data("/orchestrator")
+
+
+# --------------------------------------------------
+# DATA VALIDATION
+# --------------------------------------------------
+
+if not isinstance(news_data, list):
+    news_data = []
+
+if not isinstance(risk_data, list):
+    risk_data = []
+
+if not isinstance(supplier_data, list):
+    supplier_data = []
+
+if not isinstance(orchestrator_data, dict):
+    orchestrator_data = {}
+
+impacts_data = orchestrator_data.get("impacts", [])
+
+if not isinstance(impacts_data, list):
+    impacts_data = []
 
 
 # --------------------------------------------------
@@ -127,7 +73,7 @@ st.subheader("Autonomous Disruption Monitoring Agent")
 st.write(
     "AI-powered monitoring system for detecting supply chain "
     "disruptions, assessing risk, identifying affected suppliers, "
-    "and recommending mitigation strategies."
+    "analyzing business impact, and recommending mitigation strategies."
 )
 
 st.divider()
@@ -139,17 +85,17 @@ st.divider()
 
 st.header("📊 Supply Chain Dashboard")
 
+
 high_risk_count = sum(
     1
-    for risk in risks
+    for risk in risk_data
     if str(risk.get("severity", "")).lower() == "high"
 )
 
-active_disruptions = len(risks)
 
-news_count = len(news)
-
-supplier_count = len(suppliers)
+active_disruptions = len(risk_data)
+news_count = len(news_data)
+supplier_count = len(supplier_data)
 
 
 col1, col2, col3, col4 = st.columns(4)
@@ -193,12 +139,15 @@ st.divider()
 st.header("📰 Latest News Events")
 
 
-if news:
+if news_data:
 
-    for article in news:
+    for article in news_data:
 
         with st.expander(
-            article.get("title", "Unknown News")
+            article.get(
+                "title",
+                "Unknown News"
+            )
         ):
 
             st.write(
@@ -233,15 +182,15 @@ st.divider()
 
 
 # --------------------------------------------------
-# RISK EVENTS
+# RISK ANALYSIS
 # --------------------------------------------------
 
 st.header("⚠️ Risk Analysis")
 
 
-if risks:
+if risk_data:
 
-    for risk in risks:
+    for risk in risk_data:
 
         severity = risk.get(
             "severity",
@@ -286,21 +235,115 @@ st.divider()
 
 
 # --------------------------------------------------
-# RECOMMENDATION
+# BUSINESS IMPACT ANALYSIS
+# --------------------------------------------------
+
+st.header("📊 Business Impact Analysis")
+
+
+if impacts_data:
+
+    for index, impact in enumerate(
+        impacts_data,
+        start=1
+    ):
+
+        disruption_type = impact.get(
+            "disruption_type",
+            "Unknown"
+        )
+
+        material = impact.get(
+            "material",
+            "Unknown"
+        )
+
+        priority = impact.get(
+            "priority",
+            "Unknown"
+        )
+
+        with st.expander(
+            f"Impact Event {index} - {disruption_type}"
+        ):
+
+            col1, col2, col3, col4 = st.columns(4)
+
+            with col1:
+                st.metric(
+                    "Production Impact",
+                    impact.get(
+                        "production_impact",
+                        "Unknown"
+                    )
+                )
+
+            with col2:
+                st.metric(
+                    "Shortage Risk",
+                    impact.get(
+                        "shortage_risk",
+                        "Unknown"
+                    )
+                )
+
+            with col3:
+                st.metric(
+                    "Cost Impact",
+                    impact.get(
+                        "cost_impact",
+                        "Unknown"
+                    )
+                )
+
+            with col4:
+                st.metric(
+                    "Priority",
+                    priority
+                )
+
+            st.write(
+                f"**Material:** {material}"
+            )
+
+            st.write(
+                f"**Risk Level:** "
+                f"{impact.get('risk_level', 'Unknown')}"
+            )
+
+            st.write(
+                f"**Business Impact:** "
+                f"{impact.get('business_impact', 'Not available')}"
+            )
+
+else:
+
+    st.info(
+        "No business impact analysis available."
+    )
+
+
+st.divider()
+
+
+# --------------------------------------------------
+# AI RECOMMENDED ACTION
 # --------------------------------------------------
 
 st.header("🤖 AI Recommended Action")
 
 
-if recommendation:
+if recommendation_data:
 
-    recommendation_data = recommendation.get(
-        "recommendation",
-        {}
+    recommendation_data_inner = (
+        recommendation_data.get(
+            "recommendation",
+            {}
+        )
     )
 
     st.success(
-        recommendation_data.get(
+        recommendation_data_inner.get(
             "recommended_action",
             "No recommendation available."
         )
@@ -308,12 +351,18 @@ if recommendation:
 
     st.write(
         f"**Disruption Type:** "
-        f"{recommendation_data.get('disruption_type', 'Unknown')}"
+        f"{recommendation_data_inner.get(
+            'disruption_type',
+            'Unknown'
+        )}"
     )
 
     st.write(
         f"**Risk Level:** "
-        f"{recommendation_data.get('risk_level', 'Unknown')}"
+        f"{recommendation_data_inner.get(
+            'risk_level',
+            'Unknown'
+        )}"
     )
 
 else:
@@ -332,14 +381,15 @@ st.divider()
 
 st.header("🔄 Alternative Sourcing")
 
-if sourcing:
 
-    material = sourcing.get(
+if sourcing_data:
+
+    material = sourcing_data.get(
         "material",
         "Unknown"
     )
 
-    alternative_suppliers = sourcing.get(
+    alternative_suppliers = sourcing_data.get(
         "alternative_suppliers",
         []
     )
@@ -370,6 +420,72 @@ else:
 
     st.warning(
         "Sourcing service is unavailable."
+    )
+
+
+st.divider()
+
+
+# --------------------------------------------------
+# MULTI-AGENT SYSTEM SUMMARY
+# --------------------------------------------------
+
+st.header("🔄 Multi-Agent System")
+
+
+if orchestrator_data:
+
+    col1, col2, col3, col4, col5 = st.columns(5)
+
+    with col1:
+        st.metric(
+            "News",
+            orchestrator_data.get(
+                "news_count",
+                0
+            )
+        )
+
+    with col2:
+        st.metric(
+            "Risks",
+            orchestrator_data.get(
+                "risk_count",
+                0
+            )
+        )
+
+    with col3:
+        st.metric(
+            "Suppliers",
+            orchestrator_data.get(
+                "supplier_count",
+                0
+            )
+        )
+
+    with col4:
+        st.metric(
+            "Impacts",
+            orchestrator_data.get(
+                "impact_count",
+                0
+            )
+        )
+
+    with col5:
+        st.metric(
+            "Recommendations",
+            orchestrator_data.get(
+                "recommendation_count",
+                0
+            )
+        )
+
+else:
+
+    st.warning(
+        "Orchestrator service is unavailable."
     )
 
 
