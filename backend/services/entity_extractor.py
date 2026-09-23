@@ -8,8 +8,21 @@ SUPPLIERS = [
     "LG Energy Solution",
     "Samsung SDI",
     "Tesla",
-    "SK On"
+    "SK On",
+    "Albemarle",
+    "SQM",
+    "Ganfeng Lithium",
+    "Vale",
+    "BHP",
+    "Rio Tinto",
+    "Glencore",
+    "Umicore",
+    "Freeport-McMoRan",
+    "Syrah Resources",
+    "Novonix",
+    "Epsilon Advanced Materials"
 ]
+
 
 MATERIALS = [
     "Lithium",
@@ -20,38 +33,109 @@ MATERIALS = [
     "Manganese"
 ]
 
+
 COUNTRIES = [
     "China",
     "India",
     "USA",
+    "United States",
     "Canada",
     "Australia",
     "Indonesia",
     "Chile",
     "Brazil",
     "South Korea",
-    "Japan"
+    "Japan",
+    "Germany",
+    "UK",
+    "United Kingdom"
 ]
 
 
 def extract_entities(text: str):
+
+    text = str(text)
+
     supplier = "Unknown"
     material = "Unknown"
-    region = "Global"
+    region = "Unknown"
 
-    for s in SUPPLIERS:
-        if re.search(s, text, re.IGNORECASE):
-            supplier = s
+    # -----------------------------
+    # Supplier extraction
+    # -----------------------------
+
+    for supplier_name in SUPPLIERS:
+
+        if re.search(
+            re.escape(supplier_name),
+            text,
+            re.IGNORECASE
+        ):
+            supplier = supplier_name
             break
 
-    for m in MATERIALS:
-        if re.search(m, text, re.IGNORECASE):
-            material = m
+    # -----------------------------
+    # Material extraction
+    # -----------------------------
+
+    for material_name in MATERIALS:
+
+        if re.search(
+            re.escape(material_name),
+            text,
+            re.IGNORECASE
+        ):
+            material = material_name
             break
 
-    for c in COUNTRIES:
-        if re.search(c, text, re.IGNORECASE):
-            region = c
+    # -----------------------------
+    # Region extraction
+    # -----------------------------
+
+    for country in COUNTRIES:
+
+        if re.search(
+            re.escape(country),
+            text,
+            re.IGNORECASE
+        ):
+            region = country
             break
+
+    # -----------------------------
+    # Context-based fallback
+    # -----------------------------
+
+    if material == "Unknown":
+
+        lower_text = text.lower()
+
+        if "battery" in lower_text:
+            material = "Battery"
+
+        elif "ev" in lower_text:
+            material = "Battery"
+
+        elif "mineral" in lower_text:
+            material = "Critical Minerals"
+
+    if region == "Unknown":
+
+        lower_text = text.lower()
+
+        if "shanghai" in lower_text:
+            region = "China"
+
+        elif "china" in lower_text:
+            region = "China"
+
+        elif "europe" in lower_text:
+            region = "Europe"
+
+        elif "asia" in lower_text:
+            region = "Asia"
+
+        elif "us " in lower_text:
+            region = "USA"
 
     return supplier, material, region

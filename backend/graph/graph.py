@@ -31,8 +31,13 @@ def create_graph(suppliers, risks=None):
         if material.lower() == "unknown":
             material = None
 
-        if region.lower() == "unknown":
+        if region.lower() in ["unknown", "global"]:
             region = None
+
+        if impact.lower() in ["unknown", "global"]:
+            impact = None
+
+
 
         # Create unique node IDs
         supplier_id = (
